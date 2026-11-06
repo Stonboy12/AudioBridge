@@ -1,0 +1,13 @@
+[package]
+name = "audio-capture"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+audio-types = { path = "../audio-types" }
+thiserror = { workspace = true }
+parking_lot = { workspace = true }
+log = { workspace = true }
+serde = { workspace = true }

@@ -1,0 +1,13 @@
+[package]
+name = "audio-codec"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+audio-types = { path = "../audio-types" }
+opus = "0.4.0"
+thiserror = { workspace = true }
+log = { workspace = true }
+byteorder = { workspace = true }

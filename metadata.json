@@ -1,0 +1,6 @@
+{
+  "name": "AudioBridge",
+  "description": "Real-time low-latency audio streaming receiver from PC to Android over local network.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

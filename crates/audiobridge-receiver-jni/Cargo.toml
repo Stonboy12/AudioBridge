@@ -1,0 +1,19 @@
+[package]
+name = "audiobridge-receiver-jni"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[lib]
+name = "audiobridge_receiver"
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+audio-types = { path = "../audio-types" }
+audio-codec = { path = "../audio-codec" }
+audio-buffer = { path = "../audio-buffer" }
+streaming-protocol = { path = "../streaming-protocol" }
+parking_lot = { workspace = true }
+thiserror = { workspace = true }
+log = { workspace = true }

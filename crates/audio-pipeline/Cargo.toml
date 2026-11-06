@@ -1,0 +1,16 @@
+[package]
+name = "audio-pipeline"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+audio-types = { path = "../audio-types" }
+audio-processing = { path = "../audio-processing" }
+audio-codec = { path = "../audio-codec" }
+audio-capture = { path = "../audio-capture" }
+parking_lot = { workspace = true }
+thiserror = { workspace = true }
+log = { workspace = true }
+serde = { workspace = true }

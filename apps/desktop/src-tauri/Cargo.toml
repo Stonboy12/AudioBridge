@@ -1,0 +1,23 @@
+[package]
+name = "audiobridge-desktop"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+audio-types = { path = "../../../crates/audio-types" }
+audio-pipeline = { path = "../../../crates/audio-pipeline" }
+audio-capture = { path = "../../../crates/audio-capture" }
+config = { path = "../../../crates/config" }
+diagnostics = { path = "../../../crates/diagnostics" }
+streaming-protocol = { path = "../../../crates/streaming-protocol" }
+networking = { path = "../../../crates/networking" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+parking_lot = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }
+thiserror = { workspace = true }
+tempfile = { workspace = true }

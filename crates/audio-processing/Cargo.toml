@@ -1,0 +1,12 @@
+[package]
+name = "audio-processing"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+audio-types = { path = "../audio-types" }
+thiserror = { workspace = true }
+byteorder = { workspace = true }
+log = { workspace = true }

@@ -1,0 +1,24 @@
+[package]
+name = "audiobridge-sender"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "audiobridge-cli"
+path = "src/main.rs"
+
+[dependencies]
+audio-types = { path = "../audio-types" }
+audio-codec = { path = "../audio-codec" }
+audio-buffer = { path = "../audio-buffer" }
+streaming-protocol = { path = "../streaming-protocol" }
+networking = { path = "../networking" }
+diagnostics = { path = "../diagnostics" }
+tokio = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }
+thiserror = { workspace = true }
+rand = { workspace = true }
+byteorder = { workspace = true }

@@ -1,0 +1,63 @@
+# ==========================================
+# AudioBridge — Git Ignore Configuration
+# ==========================================
+
+# --- Android & Gradle ---
+.gradle/
+.kotlin/
+build/
+**/build/
+app/build/
+*.apk
+*.aab
+*.dex
+*.class
+*.flat
+/captures/
+.externalNativeBuild/
+.cxx/
+local.properties
+/local.properties
+
+# --- Rust & Cargo ---
+target/
+**/target/
+apps/desktop/src-tauri/target/
+crates/**/target/
+
+# --- Build Artifacts & Packages ---
+.build-outputs/
+/.build-outputs/
+
+# --- Node & Frontend ---
+node_modules/
+**/node_modules/
+apps/desktop/node_modules/
+dist/
+**/dist/
+apps/desktop/dist/
+.npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- IDEs & OS Files ---
+.idea/
+/.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# --- Secrets & Keystores (MANDATORY) ---
+.env
+.env.*
+!.env.example
+debug.keystore
+debug.keystore.base64
+*.jks
+*.keystore

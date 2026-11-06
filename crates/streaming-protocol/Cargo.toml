@@ -1,0 +1,13 @@
+[package]
+name = "streaming-protocol"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+
+[dependencies]
+audio-types = { path = "../audio-types" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+byteorder = { workspace = true }
+thiserror = { workspace = true }
