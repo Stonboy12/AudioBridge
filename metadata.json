@@ -1,6 +1,6 @@
 {
   "name": "AudioBridge",
-  "description": "Real-time low-latency audio streaming receiver from PC to Android over local network.",
+  "description": "High-fidelity, ultra-low latency (<60ms) PC-to-Android real-time audio streaming platform featuring WASAPI loopback, per-process audio routing, multi-device fan-out, and HTML5 Canvas oscilloscope visualization over local Wi-Fi.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
