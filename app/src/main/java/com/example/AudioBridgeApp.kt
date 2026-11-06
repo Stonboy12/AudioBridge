@@ -125,22 +125,37 @@ fun AudioBridgeApp(viewModel: ReceiverViewModel) {
                                 )
                         )
                         Spacer(modifier = Modifier.width(10.dp))
-                        Text(
-                            text = "AUDiOBRIDGE",
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 1.2.sp,
-                            color = Color.White
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "STAGE 3",
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = AccentCyan,
-                            modifier = Modifier
-                                .background(DarkCard, RoundedCornerShape(4.dp))
-                                .padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "Audio",
+                                fontSize = 19.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White,
+                                letterSpacing = (-0.3).sp
+                            )
+                            Text(
+                                text = "Bridge",
+                                fontSize = 19.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = AccentCyan,
+                                letterSpacing = (-0.3).sp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Box(
+                                modifier = Modifier
+                                    .background(AccentCyan.copy(alpha = 0.15f), RoundedCornerShape(6.dp))
+                                    .border(1.dp, AccentCyan.copy(alpha = 0.3f), RoundedCornerShape(6.dp))
+                                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                            ) {
+                                Text(
+                                    text = "RECEIVER",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = AccentCyan,
+                                    letterSpacing = 0.5.sp
+                                )
+                            }
+                        }
                     }
                 },
                 actions = {
@@ -809,7 +824,7 @@ fun ReceiverScreen(uiState: ReceiverUiState, viewModel: ReceiverViewModel) {
             }
         }
 
-        // Concurrent Multi-Device Streaming Card (Stage 3 Fan-Out)
+        // Concurrent Multi-Device Streaming Card (Multi-Device Fan-Out)
         item {
             Card(
                 colors = CardDefaults.cardColors(containerColor = DarkSurface),

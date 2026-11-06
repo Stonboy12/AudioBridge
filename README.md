@@ -1,4 +1,4 @@
-# AUDiOBRIDGE 🎧⚡
+# AudioBridge 🎧⚡
 ### High-Fidelity, Ultra-Low Latency PC-to-Android Real-Time Audio Streaming Platform
 
 [![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Android-blue?style=for-the-badge&logo=android)](https://github.com)
@@ -23,7 +23,7 @@ Enjoy seamless PC gaming, movie watching, and music listening with zero lip-sync
 ## ✨ Key Features
 
 - **⚡ Sub-60ms Ultra-Low Latency**: End-to-end P99 latency under **52 ms** on standard 5 GHz Wi-Fi using non-blocking UDP datagrams and adaptive jitter buffering.
-- **🔀 Smart Audio Routing (Stage 3)**: Independent per-device routing. Stream **System Audio** globally or isolate **Per-Process Audio** (e.g., Spotify, Chrome, Discord, or games) via Windows 10/11 Process Loopback (`AUDIOCLIENT_ACTIVATION_PARAMS`).
+- **🔀 Smart Audio Routing**: Independent per-device routing. Stream **System Audio** globally or isolate **Per-Process Audio** (e.g., Spotify, Chrome, Discord, or games) via Windows 10/11 Process Loopback (`AUDIOCLIENT_ACTIVATION_PARAMS`).
 - **👥 Multi-Device Fan-Out ($O(S \cdot P)$ Shared Capture)**: Stream to **4 to 8 Android devices concurrently** with shared capture and fan-out encoding. One soundcard capture feeds all listeners without CPU redundancy (< 3.5% CPU on 8 devices).
 - **🛡️ Secure Device Pairing (ADR-004)**: Cryptographic 256-bit token authentication paired with 6-digit one-time PIN confirmation and **instant QR Code camera scanning**.
 - **📊 Real-Time Oscilloscope & Waveform Visualizer**: Smooth 60 FPS HTML5 Canvas dashboard with single-wave, stereo L/R dual-trace, and peak/trough dynamic crest factor analysis.
