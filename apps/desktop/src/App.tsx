@@ -77,8 +77,30 @@ interface MultiDeviceBenchmarkReport {
   isScaledUpToTarget: boolean;
 }
 
+interface PlatformCapability {
+  backendType: 'windows_wasapi' | 'linux_pipewire' | 'macos_screencapturekit' | 'synthetic';
+  osName: string;
+  backendName: string;
+  isSystemSupported: boolean;
+  isProcessSupported: boolean;
+  minLatencyMs: number;
+  permissionText: string;
+  permissionGranted: boolean;
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<'dashboard' | 'sources' | 'settings' | 'devices' | 'diagnostics' | 'general'>('dashboard');
+
+  const [platform, setPlatform] = useState<PlatformCapability>({
+    backendType: 'windows_wasapi',
+    osName: 'Windows',
+    backendName: 'Windows WASAPI Loopback',
+    isSystemSupported: true,
+    isProcessSupported: true,
+    minLatencyMs: 10.0,
+    permissionText: 'WASAPI render loopback available (AUDCLNT_STREAMFLAGS_LOOPBACK)',
+    permissionGranted: true,
+  });
 
   const [engineStatus, setEngineStatus] = useState<EngineStatus>({
     isRunning: false,
@@ -325,6 +347,64 @@ export default function App() {
     { id: 'src_discord', name: 'Discord (Voice & Communications)', isDefault: false, sampleRate: 48000, channels: 2, processName: 'discord.exe', processId: 3216, isProcessLoopback: true, activeListeners: 0 },
   ]);
 
+  const switchPlatform = (targetOs: 'windows' | 'linux' | 'macos') => {
+    if (targetOs === 'windows') {
+      setPlatform({
+        backendType: 'windows_wasapi',
+        osName: 'Windows',
+        backendName: 'Windows WASAPI Loopback',
+        isSystemSupported: true,
+        isProcessSupported: true,
+        minLatencyMs: 10.0,
+        permissionText: 'WASAPI render loopback available (AUDCLNT_STREAMFLAGS_LOOPBACK)',
+        permissionGranted: true,
+      });
+      setSources([
+        { id: 'src_sys', name: 'Windows System Audio (Default Output)', isDefault: true, sampleRate: 48000, channels: 2, isProcessLoopback: false, activeListeners: 2 },
+        { id: 'src_chrome', name: 'Google Chrome (Browser Audio)', isDefault: false, sampleRate: 48000, channels: 2, processName: 'chrome.exe', processId: 4892, isProcessLoopback: true, activeListeners: 1 },
+        { id: 'src_spotify', name: 'Spotify (Music Stream)', isDefault: false, sampleRate: 48000, channels: 2, processName: 'spotify.exe', processId: 8120, isProcessLoopback: true, activeListeners: 1 },
+        { id: 'src_discord', name: 'Discord (Voice & Communications)', isDefault: false, sampleRate: 48000, channels: 2, processName: 'discord.exe', processId: 3216, isProcessLoopback: true, activeListeners: 0 },
+      ]);
+      setEngineStatus((prev) => ({ ...prev, activeDeviceName: 'Realtek High Definition Audio (WASAPI Loopback)' }));
+    } else if (targetOs === 'linux') {
+      setPlatform({
+        backendType: 'linux_pipewire',
+        osName: 'Linux',
+        backendName: 'Linux PipeWire Native (libpipewire-0.3)',
+        isSystemSupported: true,
+        isProcessSupported: true,
+        minLatencyMs: 8.0,
+        permissionText: 'PipeWire user daemon socket active (/run/user/1000/pipewire-0)',
+        permissionGranted: true,
+      });
+      setSources([
+        { id: 'src_sys', name: 'PipeWire Default Sink Monitor (System Audio)', isDefault: true, sampleRate: 48000, channels: 2, isProcessLoopback: false, activeListeners: 2 },
+        { id: 'src_chrome', name: 'Google Chrome (PipeWire Node)', isDefault: false, sampleRate: 48000, channels: 2, processName: 'chrome', processId: 4892, isProcessLoopback: true, activeListeners: 1 },
+        { id: 'src_spotify', name: 'Spotify (PipeWire Node)', isDefault: false, sampleRate: 48000, channels: 2, processName: 'spotify', processId: 8120, isProcessLoopback: true, activeListeners: 1 },
+        { id: 'src_discord', name: 'Discord (PipeWire Node)', isDefault: false, sampleRate: 48000, channels: 2, processName: 'discord', processId: 3216, isProcessLoopback: true, activeListeners: 0 },
+      ]);
+      setEngineStatus((prev) => ({ ...prev, activeDeviceName: 'PipeWire Default Audio Sink Monitor (System Audio)' }));
+    } else if (targetOs === 'macos') {
+      setPlatform({
+        backendType: 'macos_screencapturekit',
+        osName: 'macOS',
+        backendName: 'macOS ScreenCaptureKit (SCStream)',
+        isSystemSupported: true,
+        isProcessSupported: true,
+        minLatencyMs: 12.0,
+        permissionText: 'Screen & System Audio Recording Permission Granted (TCC Framework)',
+        permissionGranted: true,
+      });
+      setSources([
+        { id: 'src_sys', name: 'ScreenCaptureKit System Audio Output (macOS 13+)', isDefault: true, sampleRate: 48000, channels: 2, isProcessLoopback: false, activeListeners: 2 },
+        { id: 'src_chrome', name: 'Google Chrome (SCRunningApplication Audio)', isDefault: false, sampleRate: 48000, channels: 2, processName: 'Google Chrome.app', processId: 4892, isProcessLoopback: true, activeListeners: 1 },
+        { id: 'src_spotify', name: 'Spotify (SCRunningApplication Audio)', isDefault: false, sampleRate: 48000, channels: 2, processName: 'Spotify.app', processId: 8120, isProcessLoopback: true, activeListeners: 1 },
+        { id: 'src_discord', name: 'Discord (SCRunningApplication Audio)', isDefault: false, sampleRate: 48000, channels: 2, processName: 'Discord.app', processId: 3216, isProcessLoopback: true, activeListeners: 0 },
+      ]);
+      setEngineStatus((prev) => ({ ...prev, activeDeviceName: 'ScreenCaptureKit System Audio Output (macOS 13+)' }));
+    }
+  };
+
   const [benchmarkResult, setBenchmarkResult] = useState<MultiDeviceBenchmarkReport | null>(null);
 
   const handleSourceChangeForSession = (sessionId: number, newSourceId: string) => {
@@ -464,17 +544,61 @@ export default function App() {
         {/* Top Header */}
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
           <div>
-            <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#FFFFFF' }}>
-              {activeTab === 'dashboard' && 'Desktop Audio Dashboard'}
-              {activeTab === 'sources' && 'Audio Capture Sources'}
-              {activeTab === 'settings' && 'Audio Processing & Codec Settings'}
-              {activeTab === 'devices' && 'Trusted Receivers & Secure Pairing'}
-              {activeTab === 'diagnostics' && 'Real-Time Performance Diagnostics'}
-              {activeTab === 'general' && 'General & Network Settings'}
-            </h2>
-            <p style={{ fontSize: '13px', color: '#64748B', marginTop: '4px' }}>
-              Windows WASAPI System Audio • Secure LAN Streaming Engine
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#FFFFFF' }}>
+                {activeTab === 'dashboard' && 'Desktop Audio Dashboard'}
+                {activeTab === 'sources' && 'Audio Capture Sources'}
+                {activeTab === 'settings' && 'Audio Processing & Codec Settings'}
+                {activeTab === 'devices' && 'Trusted Receivers & Secure Pairing'}
+                {activeTab === 'diagnostics' && 'Real-Time Performance Diagnostics'}
+                {activeTab === 'general' && 'General & Network Settings'}
+              </h2>
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 700,
+                  color: '#00F0FF',
+                  backgroundColor: 'rgba(0, 240, 255, 0.15)',
+                  border: '1px solid #00F0FF',
+                  padding: '3px 10px',
+                  borderRadius: '12px',
+                }}
+              >
+                {platform.backendName}
+              </span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '6px' }}>
+              <p style={{ fontSize: '13px', color: '#94A3B8' }}>
+                Target OS Platform:
+              </p>
+              <div style={{ display: 'flex', gap: '6px' }}>
+                {[
+                  { id: 'windows', label: 'Windows (WASAPI)' },
+                  { id: 'linux', label: 'Linux (PipeWire)' },
+                  { id: 'macos', label: 'macOS (ScreenCaptureKit)' },
+                ].map((os) => {
+                  const isActive = platform.osName.toLowerCase() === os.id;
+                  return (
+                    <button
+                      key={os.id}
+                      onClick={() => switchPlatform(os.id as any)}
+                      style={{
+                        padding: '3px 10px',
+                        borderRadius: '6px',
+                        border: isActive ? '1px solid #00F0FF' : '1px solid #334155',
+                        backgroundColor: isActive ? 'rgba(0, 240, 255, 0.2)' : '#1E293B',
+                        color: isActive ? '#00F0FF' : '#94A3B8',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {os.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
           </div>
 
           <div style={{ display: 'flex', gap: '12px' }}>
@@ -607,14 +731,19 @@ export default function App() {
             <div style={{ backgroundColor: '#131A2B', border: '1px solid #1E293B', borderRadius: '16px', padding: '24px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: 700 }}>Audio Capture Sources & Process Loopback</h3>
+                  <h3 style={{ fontSize: '16px', fontWeight: 700 }}>{platform.backendName} — Audio Capture Sources</h3>
                   <p style={{ fontSize: '12px', color: '#64748B', marginTop: '4px' }}>
-                    Windows 10 build 20348+ & Windows 11 Process Loopback (AUDIOCLIENT_ACTIVATION_PARAMS) supported
+                    {platform.permissionText} • Min Capture Latency: ~{platform.minLatencyMs} ms
                   </p>
                 </div>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: '#00E676', backgroundColor: 'rgba(0, 230, 118, 0.15)', padding: '4px 10px', borderRadius: '6px' }}>
-                  PROCESS LOOPBACK ACTIVE
-                </span>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#00F0FF', backgroundColor: 'rgba(0, 240, 255, 0.15)', padding: '4px 10px', borderRadius: '6px' }}>
+                    {platform.osName.toUpperCase()} NATIVE
+                  </span>
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: '#00E676', backgroundColor: 'rgba(0, 230, 118, 0.15)', padding: '4px 10px', borderRadius: '6px' }}>
+                    PROCESS ROUTING READY
+                  </span>
+                </div>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>

@@ -47,10 +47,10 @@ pub struct DesktopAudioEngineState {
 impl DesktopAudioEngineState {
     pub fn new(config_path: PathBuf) -> Self {
         let config = AppConfig::load_or_default(&config_path);
-        let capture_engine = Arc::new(SyntheticLoopbackCapture::new(
+        let capture_engine = audio_capture::create_platform_capture_engine(
             config.audio.sample_rate,
             config.audio.channels,
-        ));
+        );
         let metrics_tracker = MetricsTracker::new();
         let pairing_manager = Arc::new(PairingManager::new());
         let session_manager = Arc::new(SessionManager::new());
@@ -218,58 +218,71 @@ impl DesktopAudioEngineState {
         self.session_manager.terminate_session(session_id)
     }
 
+    pub fn get_platform_capabilities(&self) -> audio_capture::PlatformCapabilityInfo {
+        audio_capture::PlatformCapabilityInfo::current()
+    }
+
     pub fn get_routing_sources(&self) -> Vec<AudioSourceInfo> {
         let counts = self.session_manager.get_active_source_counts();
-        vec![
-            AudioSourceInfo {
-                source_id: "src_sys".to_string(),
-                display_name: "Windows System Audio (Default Output)".to_string(),
-                source_type: audio_types::SourceType::SystemAudio,
-                process_id: None,
-                process_name: None,
-                is_available: true,
-                is_active: *counts.get("src_sys").unwrap_or(&0) > 0,
-                listener_count: *counts.get("src_sys").unwrap_or(&0),
-                channels: 2,
-                sample_rate: 48000,
-            },
-            AudioSourceInfo {
+        let cap = self.get_platform_capabilities();
+
+        let system_source = AudioSourceInfo {
+            source_id: "src_sys".to_string(),
+            display_name: format!("{} System Audio (Default Output)", cap.os_name),
+            source_type: audio_types::SourceType::SystemAudio,
+            process_id: None,
+            process_name: None,
+            is_available: cap.is_system_audio_supported,
+            is_active: *counts.get("src_sys").unwrap_or(&0) > 0,
+            listener_count: *counts.get("src_sys").unwrap_or(&0),
+            channels: 2,
+            sample_rate: 48000,
+        };
+
+        let mut list = vec![system_source];
+
+        if cap.is_process_audio_supported {
+            list.push(AudioSourceInfo {
                 source_id: "src_chrome".to_string(),
                 display_name: "Google Chrome (Browser Audio)".to_string(),
                 source_type: audio_types::SourceType::ProcessAudio,
                 process_id: Some(4892),
-                process_name: Some("chrome.exe".to_string()),
+                process_name: Some("chrome".to_string()),
                 is_available: true,
                 is_active: *counts.get("src_chrome").unwrap_or(&0) > 0,
                 listener_count: *counts.get("src_chrome").unwrap_or(&0),
                 channels: 2,
                 sample_rate: 48000,
-            },
-            AudioSourceInfo {
+            });
+
+            list.push(AudioSourceInfo {
                 source_id: "src_spotify".to_string(),
                 display_name: "Spotify (Music Stream)".to_string(),
                 source_type: audio_types::SourceType::ProcessAudio,
                 process_id: Some(8120),
-                process_name: Some("spotify.exe".to_string()),
+                process_name: Some("spotify".to_string()),
                 is_available: true,
                 is_active: *counts.get("src_spotify").unwrap_or(&0) > 0,
                 listener_count: *counts.get("src_spotify").unwrap_or(&0),
                 channels: 2,
                 sample_rate: 48000,
-            },
-            AudioSourceInfo {
+            });
+
+            list.push(AudioSourceInfo {
                 source_id: "src_discord".to_string(),
                 display_name: "Discord (Voice & Communications)".to_string(),
                 source_type: audio_types::SourceType::ProcessAudio,
                 process_id: Some(3216),
-                process_name: Some("discord.exe".to_string()),
+                process_name: Some("discord".to_string()),
                 is_available: true,
                 is_active: *counts.get("src_discord").unwrap_or(&0) > 0,
                 listener_count: *counts.get("src_discord").unwrap_or(&0),
                 channels: 2,
                 sample_rate: 48000,
-            },
-        ]
+            });
+        }
+
+        list
     }
 
     pub fn set_device_source(&self, session_id: u32, source_id: &str) -> bool {

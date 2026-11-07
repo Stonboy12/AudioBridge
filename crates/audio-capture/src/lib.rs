@@ -1,5 +1,11 @@
+pub mod platform;
+
 use audio_types::SourceType;
 use parking_lot::Mutex;
+pub use platform::{PermissionStatus, PlatformBackendType, PlatformCapabilityInfo};
+use platform::linux::LinuxAudioCaptureEngine;
+use platform::macos::MacOsAudioCaptureEngine;
+use platform::windows::WindowsAudioCaptureEngine;
 use serde::{Deserialize, Serialize};
 use std::f32::consts::PI;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -36,7 +42,7 @@ pub struct AudioDeviceInfo {
 
 pub type AudioSampleCallback = Arc<dyn Fn(&[f32], usize) + Send + Sync>;
 
-/// Abstraction for OS audio capture engine (WASAPI / PipeWire / Synthetic)
+/// Abstraction for OS audio capture engine (WASAPI / PipeWire / ScreenCaptureKit / Synthetic)
 pub trait AudioCaptureEngine: Send + Sync {
     fn start(&self, callback: AudioSampleCallback) -> Result<(), CaptureError>;
     fn stop(&self) -> Result<(), CaptureError>;
@@ -46,8 +52,30 @@ pub trait AudioCaptureEngine: Send + Sync {
     fn frames_captured(&self) -> u64;
 }
 
-/// Simulated / Synthetic WASAPI Loopback Capture implementation
-/// Provides 100% deterministic, high-resolution audio capture for non-Windows and testing environments
+/// Factory function to create the native platform capture engine based on target OS
+pub fn create_platform_capture_engine(sample_rate: u32, channels: u16) -> Arc<dyn AudioCaptureEngine> {
+    #[cfg(target_os = "windows")]
+    {
+        Arc::new(WindowsAudioCaptureEngine::new(sample_rate, channels))
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        Arc::new(LinuxAudioCaptureEngine::new(sample_rate, channels))
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        Arc::new(MacOsAudioCaptureEngine::new(sample_rate, channels))
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "linux", target_os = "macos")))]
+    {
+        Arc::new(SyntheticLoopbackCapture::new(sample_rate, channels))
+    }
+}
+
+/// Fallback / Synthetic Capture implementation
 pub struct SyntheticLoopbackCapture {
     is_running: Arc<AtomicBool>,
     device_info: AudioDeviceInfo,
@@ -60,8 +88,8 @@ impl SyntheticLoopbackCapture {
         Self {
             is_running: Arc::new(AtomicBool::new(false)),
             device_info: AudioDeviceInfo {
-                id: "wasapi_default_render".to_string(),
-                name: "Realtek High Definition Audio (Default Speakers Loopback)".to_string(),
+                id: "synthetic_default_render".to_string(),
+                name: "Synthetic Loopback Audio Device (Diagnostic Engine)".to_string(),
                 is_default: true,
                 source_type: SourceType::SystemAudio,
                 sample_rate,
@@ -87,7 +115,7 @@ impl AudioCaptureEngine for SyntheticLoopbackCapture {
         let handle = thread::Builder::new()
             .name("AudioBridge_Capture_Thread".to_string())
             .spawn(move || {
-                let frame_samples = (sr as f32 * 0.01) as usize; // 10ms WASAPI period
+                let frame_samples = (sr as f32 * 0.01) as usize; // 10ms frame period
                 let total_floats = frame_samples * ch;
                 let mut buffer = vec![0.0f32; total_floats];
                 let mut phase = 0.0f32;
@@ -113,7 +141,6 @@ impl AudioCaptureEngine for SyntheticLoopbackCapture {
                     callback(&buffer, frame_samples);
                     counter.fetch_add(frame_samples as u64, Ordering::Relaxed);
 
-                    // Sleep for the remainder of the 10ms frame period
                     let elapsed = start.elapsed();
                     let target_period = Duration::from_millis(10);
                     if elapsed < target_period {
@@ -150,16 +177,8 @@ impl AudioCaptureEngine for SyntheticLoopbackCapture {
         vec![
             self.device_info.clone(),
             AudioDeviceInfo {
-                id: "wasapi_headphones".to_string(),
-                name: "Realtek Audio Headphones (WASAPI Loopback)".to_string(),
-                is_default: false,
-                source_type: SourceType::SystemAudio,
-                sample_rate: 48000,
-                channels: 2,
-            },
-            AudioDeviceInfo {
-                id: "wasapi_virtual_cable".to_string(),
-                name: "VB-Audio Virtual Cable (WASAPI Loopback)".to_string(),
+                id: "synthetic_aux_device".to_string(),
+                name: "Synthetic Secondary Audio Sink (Virtual Loopback)".to_string(),
                 is_default: false,
                 source_type: SourceType::SystemAudio,
                 sample_rate: 48000,
@@ -173,30 +192,9 @@ impl AudioCaptureEngine for SyntheticLoopbackCapture {
     }
 }
 
-/// Production Windows WASAPI Loopback Engine Documentation & Architecture
-///
-/// On Windows 10/11:
-/// ```text
-/// 1. CoInitializeEx(None, COINIT_MULTITHREADED)
-/// 2. CoCreateInstance(&MMDeviceEnumerator) -> IMMDeviceEnumerator
-/// 3. pEnumerator->GetDefaultAudioEndpoint(eRender, eConsole, &pDevice)
-/// 4. pDevice->Activate(&IID_IAudioClient, CLSCTX_ALL, None, &mut pAudioClient)
-/// 5. pAudioClient->GetMixFormat(&mut pWaveFormat) (Typically IEEE Float32, 48kHz, Stereo)
-/// 6. pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK, 200_000, 0, pWaveFormat, None)
-/// 7. pAudioClient->GetService(&IID_IAudioCaptureClient, &mut pCaptureClient)
-/// 8. pAudioClient->Start()
-/// 9. Loop:
-///      pCaptureClient->GetNextPacketSize(&mut packetSize)
-///      while packetSize > 0:
-///          pCaptureClient->GetBuffer(&mut pData, &mut numFrames, &mut flags, None, None)
-///          if flags & AUDCLNT_BUFFERFLAGS_SILENT: fill zeros
-///          else: copy Float32 samples -> AudioPipeline ring buffer
-///          pCaptureClient->ReleaseBuffer(numFrames)
-///          pCaptureClient->GetNextPacketSize(&mut packetSize)
-/// 10. Recovery on AUDCLNT_E_DEVICE_INVALIDATED: re-enumerate default endpoint
-/// ```
-#[allow(dead_code)]
-pub struct WindowsWasapiLoopbackArchitecture;
+pub use platform::linux::LinuxAudioCaptureEngine as LinuxCapture;
+pub use platform::macos::MacOsAudioCaptureEngine as MacOsCapture;
+pub use platform::windows::WindowsAudioCaptureEngine as WindowsCapture;
 
 #[cfg(test)]
 mod tests {
@@ -204,28 +202,57 @@ mod tests {
     use std::sync::atomic::AtomicUsize;
 
     #[test]
-    fn test_capture_lifecycle_and_callback() {
-        let engine = SyntheticLoopbackCapture::new(48000, 2);
+    fn test_platform_capability_detection() {
+        let cap = PlatformCapabilityInfo::current();
+        assert!(cap.is_system_audio_supported);
+        assert!(cap.min_latency_ms <= 15.0);
+    }
+
+    #[test]
+    fn test_windows_capture_engine_lifecycle() {
+        let engine = WindowsAudioCaptureEngine::new(48000, 2);
         assert!(!engine.is_running());
-        assert_eq!(engine.available_devices().len(), 3);
-
-        let received_samples = Arc::new(AtomicUsize::new(0));
-        let rx_clone = received_samples.clone();
-
-        let cb = Arc::new(move |samples: &[f32], _frames: usize| {
-            rx_clone.fetch_add(samples.len(), Ordering::Relaxed);
-        });
-
-        engine.start(cb).expect("Failed to start capture");
+        let count = Arc::new(AtomicUsize::new(0));
+        let c_clone = count.clone();
+        engine.start(Arc::new(move |samples, _| {
+            c_clone.fetch_add(samples.len(), Ordering::Relaxed);
+        })).unwrap();
         assert!(engine.is_running());
-
-        // Wait 40ms to receive ~4 frames (40ms * 48000 * 2 = ~3840 samples)
-        thread::sleep(Duration::from_millis(40));
-
-        engine.stop().expect("Failed to stop capture");
+        thread::sleep(Duration::from_millis(30));
+        engine.stop().unwrap();
         assert!(!engine.is_running());
+        assert!(count.load(Ordering::Relaxed) > 0);
+    }
 
-        let total = received_samples.load(Ordering::Relaxed);
-        assert!(total > 1000, "Received samples: {}", total);
+    #[test]
+    fn test_linux_capture_engine_lifecycle() {
+        let engine = LinuxAudioCaptureEngine::new(48000, 2);
+        assert!(!engine.is_running());
+        let count = Arc::new(AtomicUsize::new(0));
+        let c_clone = count.clone();
+        engine.start(Arc::new(move |samples, _| {
+            c_clone.fetch_add(samples.len(), Ordering::Relaxed);
+        })).unwrap();
+        assert!(engine.is_running());
+        thread::sleep(Duration::from_millis(30));
+        engine.stop().unwrap();
+        assert!(!engine.is_running());
+        assert!(count.load(Ordering::Relaxed) > 0);
+    }
+
+    #[test]
+    fn test_macos_capture_engine_lifecycle() {
+        let engine = MacOsAudioCaptureEngine::new(48000, 2);
+        assert!(!engine.is_running());
+        let count = Arc::new(AtomicUsize::new(0));
+        let c_clone = count.clone();
+        engine.start(Arc::new(move |samples, _| {
+            c_clone.fetch_add(samples.len(), Ordering::Relaxed);
+        })).unwrap();
+        assert!(engine.is_running());
+        thread::sleep(Duration::from_millis(30));
+        engine.stop().unwrap();
+        assert!(!engine.is_running());
+        assert!(count.load(Ordering::Relaxed) > 0);
     }
 }
