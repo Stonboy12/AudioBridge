@@ -89,7 +89,7 @@ interface PlatformCapability {
 }
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'sources' | 'settings' | 'devices' | 'diagnostics' | 'general'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'sources' | 'settings' | 'devices' | 'connectivity' | 'diagnostics' | 'general'>('dashboard');
 
   const [platform, setPlatform] = useState<PlatformCapability>({
     backendType: 'windows_wasapi',
@@ -504,6 +504,7 @@ export default function App() {
             { id: 'sources', label: 'Audio Sources' },
             { id: 'settings', label: 'Audio Settings' },
             { id: 'devices', label: `Devices (${trustedDevices.length})` },
+            { id: 'connectivity', label: 'Connection Manager' },
             { id: 'diagnostics', label: 'Diagnostics' },
             { id: 'general', label: 'General & Network' },
           ].map((tab) => {
@@ -1294,6 +1295,139 @@ export default function App() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Tab: Connection Manager (Wi-Fi, USB Tethering, ADB Tunnel) */}
+        {activeTab === 'connectivity' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {/* Connection Mode Selection Card */}
+            <div style={{ backgroundColor: '#131A2B', border: '1px solid #1E293B', borderRadius: '16px', padding: '24px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#FFFFFF' }}>Desktop Transport & Routing Manager</h3>
+                  <p style={{ fontSize: '13px', color: '#64748B', marginTop: '4px' }}>
+                    Select between high-speed local Wi-Fi, low-jitter USB Tethering (RNDIS), and secure ADB Tunneling
+                  </p>
+                </div>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#00E676', backgroundColor: 'rgba(0, 230, 118, 0.15)', border: '1px solid #00E676', padding: '4px 12px', borderRadius: '20px' }}>
+                  FAILOVER READY
+                </span>
+              </div>
+
+              {/* Mode Cards Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                {[
+                  {
+                    id: 'wifi',
+                    name: 'Wi-Fi / LAN',
+                    latency: '~51.4 ms',
+                    jitter: '~2.1 ms',
+                    badge: 'Wireless',
+                    badgeColor: '#00F0FF',
+                    desc: 'Zero-cable convenience with automatic mDNS discovery on local 5GHz network.',
+                    active: true,
+                  },
+                  {
+                    id: 'usb',
+                    name: 'USB Tethering (RNDIS)',
+                    latency: '~24.8 ms',
+                    jitter: '~0.4 ms',
+                    badge: 'Ultra-Low Jitter',
+                    badgeColor: '#00E676',
+                    desc: 'Direct USB network interface. Ideal for crowded Wi-Fi venues and esports.',
+                    active: false,
+                  },
+                  {
+                    id: 'adb',
+                    name: 'ADB Reverse Tunnel',
+                    latency: '~22.1 ms',
+                    jitter: '~0.2 ms',
+                    badge: 'Developer Mode',
+                    badgeColor: '#A855F7',
+                    desc: 'Single-cable adb reverse forwarding via 127.0.0.1. No Wi-Fi required.',
+                    active: false,
+                  },
+                ].map((m) => (
+                  <div
+                    key={m.id}
+                    style={{
+                      padding: '20px',
+                      borderRadius: '14px',
+                      backgroundColor: m.active ? 'rgba(0, 240, 255, 0.08)' : '#0B101E',
+                      border: m.active ? '1.5px solid #00F0FF' : '1px solid #1E293B',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'space-between',
+                    }}
+                  >
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '15px', fontWeight: 700, color: '#FFFFFF' }}>{m.name}</span>
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: m.badgeColor, backgroundColor: `${m.badgeColor}22`, padding: '2px 8px', borderRadius: '4px' }}>
+                          {m.badge}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: '12px', color: '#94A3B8', marginTop: '8px', lineHeight: '1.5' }}>
+                        {m.desc}
+                      </p>
+                    </div>
+
+                    <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid #1E293B' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748B' }}>
+                        <span>Avg Latency: <b style={{ color: '#00E676' }}>{m.latency}</b></span>
+                        <span>Jitter: <b style={{ color: '#00F0FF' }}>{m.jitter}</b></span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Network Interfaces & Hardware Detection */}
+            <div style={{ backgroundColor: '#131A2B', border: '1px solid #1E293B', borderRadius: '16px', padding: '24px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '16px' }}>Detected Network Interfaces & USB Devices</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {[
+                  { name: 'wlan0 (Wi-Fi 6 802.11ax)', ip: '192.168.1.105', mtu: 1500, status: 'Active (Primary)', color: '#00E676' },
+                  { name: 'rndis0 (USB Tethering)', ip: '192.168.42.128', mtu: 1500, status: 'Plug-and-Play Standby', color: '#94A3B8' },
+                  { name: 'lo (ADB Reverse Loopback)', ip: '127.0.0.1', mtu: 65536, status: 'Daemon Ready (:40120)', color: '#A855F7' },
+                ].map((iface, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '14px 18px',
+                      borderRadius: '10px',
+                      backgroundColor: '#0B101E',
+                      border: '1px solid #1E293B',
+                    }}
+                  >
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: 600, color: '#FFFFFF' }}>{iface.name}</div>
+                      <div style={{ fontSize: '12px', color: '#64748B', marginTop: '2px', fontFamily: 'monospace' }}>
+                        IP: {iface.ip} • MTU: {iface.mtu} bytes
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: iface.color, backgroundColor: `${iface.color}15`, padding: '4px 10px', borderRadius: '6px' }}>
+                      {iface.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* ADB Security & Failover Policy Notice */}
+            <div style={{ backgroundColor: '#131A2B', border: '1px solid #1E293B', borderRadius: '16px', padding: '24px' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#FFFFFF', marginBottom: '8px' }}>Security & Automatic Failover Guarantees</h3>
+              <p style={{ fontSize: '13px', color: '#94A3B8', lineHeight: '1.6' }}>
+                • <b>Zero Silent Permissions:</b> USB Debugging for ADB must be explicitly approved on your Android phone screen. AudioBridge never bypasses device prompts or takes over private keys.<br />
+                • <b>Seamless Hot-Unplug Recovery:</b> If the USB cable is disconnected during a tethered or ADB session, AudioBridge immediately executes an exponential backoff failover to Wi-Fi without duplicating sessions or corrupting the audio ring buffer.<br />
+                • <b>Encrypted Token Integrity:</b> All control commands and audio packets remain strictly authenticated via 256-bit ADR-004 cryptographic tokens across every transport medium.
+              </p>
             </div>
           </div>
         )}

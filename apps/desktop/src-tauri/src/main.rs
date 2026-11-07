@@ -40,6 +40,7 @@ pub struct DesktopAudioEngineState {
     pub metrics_tracker: Arc<MetricsTracker>,
     pub pairing_manager: Arc<PairingManager>,
     pub session_manager: Arc<SessionManager>,
+    pub connection_manager: Arc<networking::ConnectionManager>,
     pub trusted_tokens: Arc<RwLock<HashMap<String, String>>>,
     pub config_path: PathBuf,
 }
@@ -54,6 +55,7 @@ impl DesktopAudioEngineState {
         let metrics_tracker = MetricsTracker::new();
         let pairing_manager = Arc::new(PairingManager::new());
         let session_manager = Arc::new(SessionManager::new());
+        let connection_manager = networking::ConnectionManager::new();
 
         let mut token_map = HashMap::new();
         for dev in &config.trusted_devices {
@@ -68,6 +70,7 @@ impl DesktopAudioEngineState {
             metrics_tracker,
             pairing_manager,
             session_manager,
+            connection_manager,
             trusted_tokens,
             config_path,
         }
@@ -220,6 +223,26 @@ impl DesktopAudioEngineState {
 
     pub fn get_platform_capabilities(&self) -> audio_capture::PlatformCapabilityInfo {
         audio_capture::PlatformCapabilityInfo::current()
+    }
+
+    pub fn get_connection_telemetry(&self) -> networking::ConnectionPathTelemetry {
+        self.connection_manager.get_telemetry()
+    }
+
+    pub fn get_network_interfaces(&self) -> Vec<networking::NetworkInterfaceInfo> {
+        self.connection_manager.refresh_interfaces()
+    }
+
+    pub fn set_usb_tethering(&self, active: bool, ip: Option<&str>) {
+        self.connection_manager.set_usb_tethering_state(active, ip);
+    }
+
+    pub fn configure_adb(&self, connected: bool, authorized: bool, serial: Option<&str>, port: Option<u16>) -> Result<(), String> {
+        self.connection_manager.configure_adb_tunnel(connected, authorized, serial, port)
+    }
+
+    pub fn select_connection_mode(&self, mode: networking::ConnectionTransportMode) -> Result<networking::ConnectionPathTelemetry, String> {
+        self.connection_manager.select_transport_mode(mode)
     }
 
     pub fn get_routing_sources(&self) -> Vec<AudioSourceInfo> {

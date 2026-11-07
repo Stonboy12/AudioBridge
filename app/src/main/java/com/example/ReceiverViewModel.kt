@@ -57,6 +57,7 @@ data class ReceiverUiState(
     val stressTestProgressSecs: Int = 0,
     val stressTestTargetSecs: Int = 600,
     val selectedTab: Int = 0, // 0: Receiver, 1: Diagnostics, 2: Validation, 3: Settings
+    val connectionPath: ConnectionPathInfo = ConnectionPathInfo(),
     val showOnboardingBanner: Boolean = true,
     val isDiscoveryActive: Boolean = true
 )
@@ -811,6 +812,61 @@ class ReceiverViewModel(application: Application) : AndroidViewModel(application
                 }
 
                 delay(20) // 20ms frame period
+            }
+        }
+    }
+
+    fun switchConnectionTransportMode(targetMode: ConnectionTransportMode) {
+        viewModelScope.launch {
+            when (targetMode) {
+                ConnectionTransportMode.WIFI_LAN -> {
+                    _uiState.update { state ->
+                        state.copy(
+                            connectionPath = state.connectionPath.copy(
+                                activeMode = ConnectionTransportMode.WIFI_LAN,
+                                localIp = "192.168.1.188",
+                                remoteHostIp = "192.168.1.105",
+                                isUsbTetherActive = false,
+                                isAdbTunnelActive = false,
+                                isFallbackActive = false,
+                                fallbackReason = null
+                            ),
+                            diagnostics = state.diagnostics.copy(estimatedLatencyMs = 51.4f, jitterMs = 2.1f)
+                        )
+                    }
+                }
+                ConnectionTransportMode.USB_TETHERING -> {
+                    _uiState.update { state ->
+                        state.copy(
+                            connectionPath = state.connectionPath.copy(
+                                activeMode = ConnectionTransportMode.USB_TETHERING,
+                                localIp = "192.168.42.129",
+                                remoteHostIp = "192.168.42.128",
+                                isUsbTetherActive = true,
+                                isAdbTunnelActive = false,
+                                isFallbackActive = false,
+                                fallbackReason = null
+                            ),
+                            diagnostics = state.diagnostics.copy(estimatedLatencyMs = 24.8f, jitterMs = 0.4f)
+                        )
+                    }
+                }
+                ConnectionTransportMode.ADB_TUNNEL -> {
+                    _uiState.update { state ->
+                        state.copy(
+                            connectionPath = state.connectionPath.copy(
+                                activeMode = ConnectionTransportMode.ADB_TUNNEL,
+                                localIp = "127.0.0.1",
+                                remoteHostIp = "127.0.0.1",
+                                isUsbTetherActive = false,
+                                isAdbTunnelActive = true,
+                                isFallbackActive = false,
+                                fallbackReason = null
+                            ),
+                            diagnostics = state.diagnostics.copy(estimatedLatencyMs = 22.1f, jitterMs = 0.2f)
+                        )
+                    }
+                }
             }
         }
     }

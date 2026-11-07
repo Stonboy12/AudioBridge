@@ -1,8 +1,13 @@
+pub mod connection_manager;
 pub mod control_server;
 pub mod discovery;
 pub mod pairing;
 pub mod session;
 
+pub use connection_manager::{
+    AdbDeviceStatus, ConnectionManager, ConnectionPathTelemetry, ConnectionTransportMode,
+    NetworkInterfaceInfo, TransportPriorityPolicy, UsbTetheringStatus,
+};
 pub use control_server::{ControlPlaneServer, ServerConfig};
 pub use discovery::{DiscoveredHost, ServiceMetadata, DEFAULT_CONTROL_PORT, DEFAULT_MEDIA_PORT, MDNS_SERVICE_TYPE};
 pub use pairing::{generate_secure_auth_token, PairingChallengeInfo, PairingError, PairingManager, MAX_PAIRING_ATTEMPTS, PAIRING_EXPIRY_SECS};

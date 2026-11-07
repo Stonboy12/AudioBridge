@@ -11,6 +11,23 @@ enum class ConnectionStatus {
     ERROR
 }
 
+enum class ConnectionTransportMode(val displayName: String, val badge: String) {
+    WIFI_LAN("Wi-Fi / LAN", "Wi-Fi"),
+    USB_TETHERING("USB Tethering (RNDIS)", "USB Tether"),
+    ADB_TUNNEL("ADB Reverse Tunnel (USB)", "ADB Tunnel")
+}
+
+data class ConnectionPathInfo(
+    val activeMode: ConnectionTransportMode = ConnectionTransportMode.WIFI_LAN,
+    val localIp: String = "192.168.1.188",
+    val remoteHostIp: String = "192.168.1.105",
+    val mediaPort: Int = 40121,
+    val isUsbTetherActive: Boolean = false,
+    val isAdbTunnelActive: Boolean = false,
+    val isFallbackActive: Boolean = false,
+    val fallbackReason: String? = null
+)
+
 enum class AudioCodec(val displayName: String) {
     OPUS("Opus (Interactive LowDelay)"),
     PCM("Linear PCM (Uncompressed)")

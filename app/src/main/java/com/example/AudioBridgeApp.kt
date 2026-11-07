@@ -454,6 +454,36 @@ fun ReceiverScreen(uiState: ReceiverUiState, viewModel: ReceiverViewModel) {
 
                     Spacer(modifier = Modifier.height(12.dp))
 
+                    // Transport Mode Selector (Wi-Fi, USB Tether, ADB Tunnel)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        ConnectionTransportMode.values().forEach { mode ->
+                            val isSelected = uiState.connectionPath.activeMode == mode
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(if (isSelected) AccentCyan.copy(alpha = 0.2f) else DarkCard)
+                                    .border(1.dp, if (isSelected) AccentCyan else DarkCard, RoundedCornerShape(8.dp))
+                                    .clickable { viewModel.switchConnectionTransportMode(mode) }
+                                    .padding(vertical = 6.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text(
+                                    text = mode.badge,
+                                    fontSize = 11.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) AccentCyan else Color.LightGray
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
                     // Quick Telemetry Pills
                     Row(
                         modifier = Modifier.fillMaxWidth(),
